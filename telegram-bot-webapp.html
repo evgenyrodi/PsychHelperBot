@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Психолог-бот Web App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #moodChart {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Оцените ваше настроение</h1>
+    <div id="moodButtons">
+        <button onclick="setMood(1)">😢 1</button>
+        <button onclick="setMood(2)">😕 2</button>
+        <button onclick="setMood(3)">😐 3</button>
+        <button onclick="setMood(4)">🙂 4</button>
+        <button onclick="setMood(5)">😁 5</button>
+    </div>
+    <div id="moodChart"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function setMood(mood) {
+            tg.sendData(JSON.stringify({action: 'setMood', mood: mood}));
+            tg.close();
+        }
+
+        // Здесь будет код для отображения графика настроения
+        // Мы добавим его позже, когда настроим отправку данных из бота
+
+        tg.ready();
+    </script>
+</body>
+</html>

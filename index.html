@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Психолог-бот Web App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,37 +26,116 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        #moodChart {
+        #moodChart, #chatArea {
             width: 100%;
             max-width: 600px;
-            height: 300px;
             margin-top: 20px;
+        }
+        #chatArea {
+            height: 300px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        #userInput {
+            width: calc(100% - 22px);
+            max-width: 578px;
+            margin-top: 10px;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Оцените ваше настроение</h1>
-    <div id="moodButtons">
-        <button onclick="setMood(1)">😢 1</button>
-        <button onclick="setMood(2)">😕 2</button>
-        <button onclick="setMood(3)">😐 3</button>
-        <button onclick="setMood(4)">🙂 4</button>
-        <button onclick="setMood(5)">😁 5</button>
+    <h1>Психолог-бот</h1>
+    <div id="moodSection">
+        <h2>Оцените ваше настроение</h2>
+        <div id="moodButtons">
+            <button onclick="setMood(1)">😢 1</button>
+            <button onclick="setMood(2)">😕 2</button>
+            <button onclick="setMood(3)">😐 3</button>
+            <button onclick="setMood(4)">🙂 4</button>
+            <button onclick="setMood(5)">😁 5</button>
+        </div>
     </div>
-    <div id="moodChart"></div>
+    <canvas id="moodChart"></canvas>
+    <div id="chatSection">
+        <h2>Чат с психологом</h2>
+        <div id="chatArea"></div>
+        <input type="text" id="userInput" placeholder="Введите ваше сообщение...">
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        let moodData = [];
+        let moodChart;
+
         function setMood(mood) {
+            let date = new Date().toISOString().split('T')[0];
+            moodData.push({date: date, mood: mood});
+            updateChart();
             tg.sendData(JSON.stringify({action: 'setMood', mood: mood}));
-            tg.close();
         }
 
-        // Здесь будет код для отображения графика настроения
-        // Мы добавим его позже, когда настроим отправку данных из бота
+        function updateChart() {
+            if (moodChart) {
+                moodChart.destroy();
+            }
+            let ctx = document.getElementById('moodChart').getContext('2d');
+            moodChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: moodData.map(d => d.date),
+                    datasets: [{
+                        label: 'Настроение',
+                        data: moodData.map(d => d.mood),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    }
+                }
+            });
+        }
+
+        function sendMessage() {
+            let userInput = document.getElementById('userInput');
+            let message = userInput.value.trim();
+            if (message) {
+                appendMessage('Вы: ' + message);
+                tg.sendData(JSON.stringify({action: 'chat', message: message}));
+                userInput.value = '';
+            }
+        }
+
+        function appendMessage(message) {
+            let chatArea = document.getElementById('chatArea');
+            let messageElement = document.createElement('p');
+            messageElement.textContent = message;
+            chatArea.appendChild(messageElement);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        tg.onEvent('mainButtonClicked', function(){
+            tg.sendData(JSON.stringify({action: 'main_button_clicked'}));
+        });
+
+        tg.MainButton.setText('Закрыть').show();
+
+        window.addEventListener('message', function(event) {
+            if (event.data.action === 'botResponse') {
+                appendMessage('Бот: ' + event.data.message);
+            }
+        });
 
         tg.ready();
     </script>

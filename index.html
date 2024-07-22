@@ -64,8 +64,9 @@
         <input type="text" id="userInput" placeholder="Введите ваше сообщение...">
         <button onclick="sendMessage()">Отправить</button>
     </div>
+    
 
-    <script>
+<script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -77,6 +78,7 @@
             moodData.push({date: date, mood: mood});
             updateChart();
             tg.sendData(JSON.stringify({action: 'setMood', mood: mood}));
+            tg.close();
         }
 
         function updateChart() {
@@ -107,13 +109,14 @@
             });
         }
 
-        function sendMessage() {
+function sendMessage() {
             let userInput = document.getElementById('userInput');
             let message = userInput.value.trim();
             if (message) {
                 appendMessage('Вы: ' + message);
                 tg.sendData(JSON.stringify({action: 'chat', message: message}));
                 userInput.value = '';
+                tg.close();
             }
         }
 
@@ -126,16 +129,10 @@
         }
 
         tg.onEvent('mainButtonClicked', function(){
-            tg.sendData(JSON.stringify({action: 'main_button_clicked'}));
+            tg.close();
         });
 
         tg.MainButton.setText('Закрыть').show();
-
-        window.addEventListener('message', function(event) {
-            if (event.data.action === 'botResponse') {
-                appendMessage('Бот: ' + event.data.message);
-            }
-        });
 
         tg.ready();
     </script>

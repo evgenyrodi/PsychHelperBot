@@ -43,6 +43,22 @@
             margin-top: 10px;
             padding: 10px;
         }
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: var(--tg-theme-hint-color, #eef2f5);
+            text-align: right;
+        }
+        .bot-message {
+            background-color: var(--tg-theme-secondary-bg-color, #f1f3f4);
+        }
+        #loadingIndicator {
+            display: none;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -63,22 +79,22 @@
         <div id="chatArea"></div>
         <input type="text" id="userInput" placeholder="Введите ваше сообщение...">
         <button onclick="sendMessage()">Отправить</button>
+        <div id="loadingIndicator">Бот печатает...</div>
     </div>
-    
 
 <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        let moodData = [];
+        let moodData = JSON.parse(localStorage.getItem('moodData')) || [];
         let moodChart;
 
         function setMood(mood) {
             let date = new Date().toISOString().split('T')[0];
             moodData.push({date: date, mood: mood});
+            localStorage.setItem('moodData', JSON.stringify(moodData));
             updateChart();
             tg.sendData(JSON.stringify({action: 'setMood', mood: mood}));
-            tg.close();
         }
 
         function updateChart() {
@@ -109,21 +125,33 @@
             });
         }
 
-function sendMessage() {
+        function sendMessage() {
             let userInput = document.getElementById('userInput');
             let message = userInput.value.trim();
             if (message) {
-                appendMessage('Вы: ' + message);
-                tg.sendData(JSON.stringify({action: 'chat', message: message}));
+                appendMessage('Вы: ' + message, 'user-message');
                 userInput.value = '';
-                tg.close();
+                document.getElementById('loadingIndicator').style.display = 'block';
+                
+                // Отправляем сообщение боту и ожидаем ответ
+                tg.sendData(JSON.stringify({action: 'chat', message: message}));
+                
+                // Здесь мы должны ждать ответа от бота
+                // В реальном приложении здесь будет асинхронный запрос к серверу
+                // Для демонстрации, мы будем использовать setTimeout
+                setTimeout(() => {
+                    let botResponse = "Это пример ответа бота. В реальном приложении здесь будет ответ от ИИ.";
+                    appendMessage('Бот: ' + botResponse, 'bot-message');
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                }, 1000);
             }
         }
 
-        function appendMessage(message) {
+        function appendMessage(message, className) {
             let chatArea = document.getElementById('chatArea');
-            let messageElement = document.createElement('p');
+            let messageElement = document.createElement('div');
             messageElement.textContent = message;
+            messageElement.className = 'message ' + className;
             chatArea.appendChild(messageElement);
             chatArea.scrollTop = chatArea.scrollHeight;
         }
@@ -134,6 +162,7 @@ function sendMessage() {
 
         tg.MainButton.setText('Закрыть').show();
 
+        updateChart();
         tg.ready();
     </script>
 </body>

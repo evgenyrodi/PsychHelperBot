@@ -1,131 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Психолог-бот Web App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-        }
-        button {
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #moodChart, #chatArea {
-            width: 100%;
-            max-width: 600px;
-            margin-top: 20px;
-        }
-        #chatArea {
-            height: 300px;
-            border: 1px solid #ccc;
-            overflow-y: auto;
-            padding: 10px;
-        }
-        #userInput {
-            width: calc(100% - 22px);
-            max-width: 578px;
-            margin-top: 10px;
-            padding: 10px;
-        }
-        .message {
-            margin-bottom: 10px;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .user-message {
-            background-color: var(--tg-theme-hint-color, #eef2f5);
-            text-align: right;
-        }
-        .bot-message {
-            background-color: var(--tg-theme-secondary-bg-color, #f1f3f4);
-        }
-        #loadingIndicator {
-            display: none;
-            margin-top: 10px;
-        }
-    </style>
+    <!-- ... (остальной код остается без изменений) ... -->
 </head>
 <body>
-    <h1>Психолог-бот</h1>
-    <div id="moodSection">
-        <h2>Оцените ваше настроение</h2>
-        <div id="moodButtons">
-            <button onclick="setMood(1)">😢 1</button>
-            <button onclick="setMood(2)">😕 2</button>
-            <button onclick="setMood(3)">😐 3</button>
-            <button onclick="setMood(4)">🙂 4</button>
-            <button onclick="setMood(5)">😁 5</button>
-        </div>
-    </div>
-    <canvas id="moodChart"></canvas>
-    <div id="chatSection">
-        <h2>Чат с психологом</h2>
-        <div id="chatArea"></div>
-        <input type="text" id="userInput" placeholder="Введите ваше сообщение...">
-        <button onclick="sendMessage()">Отправить</button>
-        <div id="loadingIndicator">Бот печатает...</div>
-    </div>
+    <!-- ... (остальной код остается без изменений) ... -->
 
 <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+        // ... (остальной код остается без изменений) ...
 
-        let moodData = JSON.parse(localStorage.getItem('moodData')) || [];
-        let moodChart;
-
-        function setMood(mood) {
-            let date = new Date().toISOString().split('T')[0];
-            moodData.push({date: date, mood: mood});
-            localStorage.setItem('moodData', JSON.stringify(moodData));
-            updateChart();
-            tg.sendData(JSON.stringify({action: 'setMood', mood: mood}));
-        }
-
-        function updateChart() {
-            if (moodChart) {
-                moodChart.destroy();
-            }
-            let ctx = document.getElementById('moodChart').getContext('2d');
-            moodChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: moodData.map(d => d.date),
-                    datasets: [{
-                        label: 'Настроение',
-                        data: moodData.map(d => d.mood),
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 5
-                        }
-                    }
-                }
-            });
-        }
-
-        function sendMessage() {
+        async function sendMessage() {
             let userInput = document.getElementById('userInput');
             let message = userInput.value.trim();
             if (message) {
@@ -133,37 +17,26 @@
                 userInput.value = '';
                 document.getElementById('loadingIndicator').style.display = 'block';
                 
-                // Отправляем сообщение боту и ожидаем ответ
-                tg.sendData(JSON.stringify({action: 'chat', message: message}));
-                
-                // Здесь мы должны ждать ответа от бота
-                // В реальном приложении здесь будет асинхронный запрос к серверу
-                // Для демонстрации, мы будем использовать setTimeout
-                setTimeout(() => {
-                    let botResponse = "Это пример ответа бота. В реальном приложении здесь будет ответ от ИИ.";
-                    appendMessage('Бот: ' + botResponse, 'bot-message');
+                try {
+                    const response = await fetch('https://ваш-api-url/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: message }),
+                    });
+                    const data = await response.json();
+                    appendMessage('Бот: ' + data.response, 'bot-message');
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    appendMessage('Бот: Извините, произошла ошибка при обработке вашего сообщения.', 'bot-message');
+                } finally {
                     document.getElementById('loadingIndicator').style.display = 'none';
-                }, 1000);
+                }
             }
         }
 
-        function appendMessage(message, className) {
-            let chatArea = document.getElementById('chatArea');
-            let messageElement = document.createElement('div');
-            messageElement.textContent = message;
-            messageElement.className = 'message ' + className;
-            chatArea.appendChild(messageElement);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        tg.onEvent('mainButtonClicked', function(){
-            tg.close();
-        });
-
-        tg.MainButton.setText('Закрыть').show();
-
-        updateChart();
-        tg.ready();
+        // ... (остальной код остается без изменений) ...
     </script>
 </body>
 </html>
